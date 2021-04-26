@@ -179,6 +179,7 @@ int sddc_set_rf_mode(sddc_t *t, enum RFMode rf_mode)
         break;
     case HF_MODE:
         t->handler->UpdatemodeRF(HFMODE);
+	break;
     default:
         return -1;
     }
@@ -260,7 +261,12 @@ double sddc_get_hf_attenuation(sddc_t *t)
 
 int sddc_set_hf_attenuation(sddc_t *t, double attenuation)
 {
-    return 0;
+    return t->handler->UpdateattRF(int(attenuation));
+}
+
+int sddc_set_hf_vga_gain(sddc_t *t, int idx)
+{
+    return t->handler->UpdateIFGain(idx);
 }
 
 int sddc_get_hf_bias(sddc_t *t)

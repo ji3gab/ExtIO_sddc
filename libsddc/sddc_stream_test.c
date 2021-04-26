@@ -102,7 +102,7 @@ static int num_callbacks;
 static int16_t *sampleData = 0;
 static int runtime = 3000;
 static struct timespec clk_start, clk_end;
-static int stop_reception = 0;
+static volatile int stop_reception = 0;
 
 static double clk_diff() {
   return ((double)clk_end.tv_sec + 1.0e-9*clk_end.tv_nsec) - 
@@ -138,8 +138,30 @@ int main(int argc, char **argv)
     return -1;
   }
 
+  fprintf(stderr, "HW_MODEL_NAME: %s\n", sddc_get_hw_model_name(sddc));
+  
   if (sddc_set_sample_rate(sddc, sample_rate) < 0) {
     fprintf(stderr, "ERROR - sddc_set_sample_rate() failed\n");
+    goto DONE;
+  }
+
+  if (sddc_set_rf_mode(sddc, HF_MODE) < 0) {
+    fprintf(stderr, "ERROR - sddc_set_rf_mode() failed\n");
+    goto DONE;
+  }
+
+  if (sddc_set_hf_attenuation(sddc, 63) < 0) {
+    fprintf(stderr, "ERROR - sddc_set_hf_attenuation() failed\n");
+    goto DONE;
+  }
+
+  if (sddc_set_hf_vga_gain(sddc, 40) < 0) {
+    fprintf(stderr, "ERROR - sddc_set_hf_vga_gain() failed\n");
+    goto DONE;
+  }
+
+  if (sddc_set_hf_bias(sddc, 1) < 0) {
+    fprintf(stderr, "ERROR - sddc_set_hf_bias() failed\n");
     goto DONE;
   }
 
@@ -164,9 +186,13 @@ int main(int argc, char **argv)
   /* todo: move this into a thread */
   stop_reception = 0;
   clock_gettime(CLOCK_REALTIME, &clk_start);
+  /* now handles in FX3handler.cpp
   while (!stop_reception)
     sddc_handle_events(sddc);
-
+  */
+  while (stop_reception == 0) {
+  }
+  
   fprintf(stderr, "finished. now stop streaming ..\n");
   if (sddc_stop_streaming(sddc) < 0) {
     fprintf(stderr, "ERROR - sddc_stop_streaming() failed\n");
@@ -207,6 +233,7 @@ static void count_bytes_callback(uint32_t data_size,
     return;
   ++num_callbacks;
   unsigned N = data_size / sizeof(int16_t);
+  //fprintf(stderr, "callback: received=%d samples %d th callbacks\n", N, num_callbacks);  
   if ( received_samples + N < total_samples ) {
     if (sampleData)
       memcpy( sampleData+received_samples, data, data_size);

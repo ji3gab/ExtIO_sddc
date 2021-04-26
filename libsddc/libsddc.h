@@ -114,6 +114,8 @@ double sddc_get_hf_attenuation(sddc_t *t);
 
 int sddc_set_hf_attenuation(sddc_t *t, double attenuation);
 
+int sddc_set_hf_vga_gain(sddc_t *t, int idx);
+
 int sddc_get_hf_bias(sddc_t *t);
 
 int sddc_set_hf_bias(sddc_t *t, int bias);
